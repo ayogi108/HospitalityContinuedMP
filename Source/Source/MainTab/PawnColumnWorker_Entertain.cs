@@ -16,8 +16,9 @@ namespace Hospitality.MainTab
             {
                 table.SetDirty();
             }
-            var compGuest = pawn.CompGuest();
-            if (compGuest != null) compGuest.entertain = value;
+
+            // MP: route guest-table entertain changes through a synced wrapper instead of a local-only field write
+            Multiplayer.SetGuestEntertain(pawn, value);
         }
     }
 }

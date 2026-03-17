@@ -19,12 +19,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\..\Users\conse\Desktop\!16\0Harmony.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\Harmony\2009463077\Current\Assemblies\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="0MultiplayerAPI">
-      <HintPath>..\..\..\..\..\Users\conse\Desktop\0MultiplayerAPI.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\Multiplayer\1.6\Assemblies\0MultiplayerAPI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

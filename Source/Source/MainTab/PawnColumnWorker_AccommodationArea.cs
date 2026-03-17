@@ -14,8 +14,8 @@ internal class PawnColumnWorker_AccommodationArea : PawnColumnWorker_AreaBase
 
     protected override void SetArea(Pawn pawn, Area area)
     {
-        var comp = pawn.CompGuest();
-        if (comp != null) comp.GuestArea = area;
+        // MP: route accommodation-area changes through a synced wrapper using a stable area ID
+        Multiplayer.SetGuestAccommodationAreaById(pawn, area?.ID ?? -1);
     }
 
     protected override void DrawTopArea(Rect rect)

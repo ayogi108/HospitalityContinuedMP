@@ -13,3 +13,9 @@ Source/.idea/
 Source/.vs/
 Source/packages/
 /Source/Source/obj
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.sln.docstates

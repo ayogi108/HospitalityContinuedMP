@@ -17,8 +17,8 @@ internal static class Multiplayer
     {
         if (!MP.enabled) return;
 
-        // CompGuest
-        guestFields = 
+        // MP: sync guest state fields that can be changed through Hospitality UI/actions
+        guestFields =
         [
             MP.RegisterSyncField(typeof(CompGuest), "guestArea_int").SetBufferChanges(),
             MP.RegisterSyncField(typeof(CompGuest), "shoppingArea_int").SetBufferChanges(),
@@ -29,8 +29,8 @@ internal static class Multiplayer
             MP.RegisterSyncField(typeof(CompGuest), nameof(CompGuest.wasDowned))
         ];
 
-    // Hospitality_MapComponent
-    mapFields =
+        // MP: sync map-level Hospitality defaults/settings that can be edited in dialogs
+        mapFields =
         [
             MP.RegisterSyncField(typeof(Hospitality_MapComponent), nameof(Hospitality_MapComponent.defaultMakeFriends)),
             MP.RegisterSyncField(typeof(Hospitality_MapComponent), nameof(Hospitality_MapComponent.defaultEntertain)),
@@ -43,36 +43,87 @@ internal static class Multiplayer
             MP.RegisterSyncField(typeof(Hospitality_MapComponent), nameof(Hospitality_MapComponent.drugPolicy))
         ];
 
-        // Guest ITab
-        {
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(ITab_Pawn_Guest), nameof(ITab_Pawn_Guest.SendHome)));
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(GuestUtility), nameof(GuestUtility.Recruit)));
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(ITab_Pawn_Guest), nameof(ITab_Pawn_Guest.SetAllDefaults)));
-        }
+        // MP: sync guest ITab actions triggered by players
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(ITab_Pawn_Guest), nameof(ITab_Pawn_Guest.SendHome)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(GuestUtility), nameof(GuestUtility.Recruit)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(ITab_Pawn_Guest), nameof(ITab_Pawn_Guest.SetAllDefaults)));
 
-        // Beds
-        {
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(Building_GuestBed), nameof(Building_GuestBed.Swap)));
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(Building_GuestBed), nameof(Building_GuestBed.SetRentalFee)));
-        }
+        // MP: sync guest bed actions triggered by players
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Building_GuestBed), nameof(Building_GuestBed.Swap)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Building_GuestBed), nameof(Building_GuestBed.SetRentalFee)));
 
-        // Dispenser
-        {
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(CompVendingMachine), nameof(CompVendingMachine.SetPrice)));
-            MP.RegisterSyncMethod(AccessTools.Method(typeof(CompVendingMachine), nameof(CompVendingMachine.ToggleActive)));
-        }
+        // MP: sync vending-machine actions, including empty-threshold changes
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(CompVendingMachine), nameof(CompVendingMachine.SetPrice)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(CompVendingMachine), nameof(CompVendingMachine.SetEmptyThreshold)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(CompVendingMachine), nameof(CompVendingMachine.ToggleActive)));
+
+        // MP: sync wrappers for guest-table checkbox changes instead of local-only field writes
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestEntertain)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestMakeFriends)));
+
+        // MP: sync guest area changes from the main Hospitality table using stable area IDs
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestAccommodationAreaById)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestShoppingAreaById)));
     }
 
+    // MP sync wrapper: route guest-table entertain toggles through a synced method
+    internal static void SetGuestEntertain(Pawn pawn, bool value)
+    {
+        var compGuest = pawn.CompGuest();
+        if (compGuest != null)
+            compGuest.entertain = value;
+    }
+
+    // MP sync wrapper: route guest-table make-friends toggles through a synced method
+    internal static void SetGuestMakeFriends(Pawn pawn, bool value)
+    {
+        var compGuest = pawn.CompGuest();
+        if (compGuest != null)
+            compGuest.makeFriends = value;
+    }
+    // MP sync wrapper: route accommodation-area changes through a synced method using a stable area ID
+    internal static void SetGuestAccommodationAreaById(Pawn pawn, int areaId)
+    {
+        var compGuest = pawn.CompGuest();
+        if (compGuest != null)
+            compGuest.GuestArea = GetAreaById(pawn.Map, areaId);
+    }
+
+    // MP sync wrapper: route shopping-area changes through a synced method using a stable area ID
+    internal static void SetGuestShoppingAreaById(Pawn pawn, int areaId)
+    {
+        var compGuest = pawn.CompGuest();
+        if (compGuest != null)
+            compGuest.ShoppingArea = GetAreaById(pawn.Map, areaId);
+    }
+
+    // MP helper: resolve a synced area ID back to a map area; -1 means no restriction / null
+    internal static Area GetAreaById(Map map, int areaId)
+    {
+        if (map == null || areaId < 0)
+            return null;
+
+        foreach (var area in map.areaManager.AllAreas)
+        {
+            if (area.ID == areaId)
+                return area;
+        }
+
+        return null;
+    }
+    // MP: begin watching UI-driven field edits that happen during window drawing
     internal static void WatchBegin()
     {
         MP.WatchBegin();
     }
 
+    // MP: end watched UI mutation scope
     internal static void WatchEnd()
     {
         MP.WatchEnd();
     }
 
+    // MP: watch the provided fields on a specific object while a watched UI block is open
     internal static void Watch(this ISyncField[] fields, object obj)
     {
         if (!MP.IsInMultiplayer) return;

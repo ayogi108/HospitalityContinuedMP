@@ -16,8 +16,9 @@ namespace Hospitality.MainTab
             {
                 table.SetDirty();
             }
-            var compGuest = pawn.CompGuest();
-            if (compGuest != null) compGuest.makeFriends = value;
+
+            // MP: route guest-table make-friends changes through a synced wrapper instead of a local-only field write
+            Multiplayer.SetGuestMakeFriends(pawn, value);
         }
     }
 }

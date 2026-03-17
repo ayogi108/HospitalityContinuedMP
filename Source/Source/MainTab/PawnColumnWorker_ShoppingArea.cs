@@ -15,8 +15,8 @@ namespace Hospitality.MainTab
 
         protected override void SetArea(Pawn pawn, Area area)
         {
-            var comp = pawn.CompGuest();
-            if (comp != null) comp.ShoppingArea = area;
+            // MP: route shopping-area changes through a synced wrapper using a stable area ID
+            Multiplayer.SetGuestShoppingAreaById(pawn, area?.ID ?? -1);
         }
 
         protected override void DrawTopArea(Rect rect)
