@@ -14,7 +14,7 @@ internal static class GenericUtility
 {
     internal const int NoBasesLeft = -1;
 
-    private static readonly Dictionary<Faction, int> travelDaysCache = new();
+    private static readonly Dictionary<(Faction faction, int tile), int> travelDaysCache = new();
 
     public static bool IsMeal(this Thing thing)
     {
@@ -64,7 +64,8 @@ internal static class GenericUtility
 
     public static float GetTravelDays(Faction faction, Map map)
     {
-        if (travelDaysCache.TryGetValue(faction, out var minTicks)) return minTicks / (float)GenDate.TicksPerDay;
+        var cacheKey = (faction, map.Tile);
+        if (travelDaysCache.TryGetValue(cacheKey, out var minTicks)) return minTicks / (float)GenDate.TicksPerDay;
 
         minTicks = int.MaxValue;
         foreach (var settlement in Find.WorldObjects.SettlementBases)
@@ -79,7 +80,7 @@ internal static class GenericUtility
 
         if (minTicks == int.MaxValue) return NoBasesLeft;
 
-        travelDaysCache.Add(faction, minTicks);
+        travelDaysCache.Add(cacheKey, minTicks);
 
         //Log.Message("It takes the " + faction.def.pawnsPlural + " " + days + " days to travel to the player.");
         return minTicks / (float)GenDate.TicksPerDay;

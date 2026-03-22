@@ -189,18 +189,12 @@ namespace Hospitality
 
         private void SetAreaRestriction(Area area)
         {
-            foreach (var pawn in SelPawn.GetLord().ownedPawns)
-            {
-                pawn.CompGuest().GuestArea = area;
-            }
+            Multiplayer.SetLordAccommodationAreaById(SelPawn, area?.ID ?? -1);
         }
 
         private void SetAreaShopping(Area area)
         {
-            foreach (var pawn in SelPawn.GetLord().ownedPawns)
-            {
-                pawn.CompGuest().ShoppingArea = area;
-            }
+            Multiplayer.SetLordShoppingAreaById(SelPawn, area?.ID ?? -1);
         }
 
         public static void RecruitDialog(Pawn pawn, bool forced)

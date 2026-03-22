@@ -68,6 +68,25 @@ public class CompGuest : ThingComp
         Pawn.ownership.UnclaimBed();
     }
 
+    private void RebindHospitalityLord()
+    {
+        var currentLord = Pawn.GetLord();
+        if (currentLord == null || currentLord.Map != Pawn.Map || !currentLord.ownedPawns.Contains(Pawn))
+        {
+            lord = null;
+            return;
+        }
+
+        // Save/load defensive rebind: only keep lord references for Hospitality-relevant group states.
+        if (currentLord.LordJob is LordJob_VisitColony || currentLord.LordJob is LordJob_TradeWithColony)
+        {
+            lord = currentLord;
+            return;
+        }
+
+        lord = null;
+    }
+
     public override void PostExposeData()
     {
         base.PostExposeData();
@@ -80,7 +99,6 @@ public class CompGuest : ThingComp
         Scribe_References.Look(ref guestArea_int, "guestArea");
         Scribe_References.Look(ref shoppingArea_int, "shoppingArea");
         Scribe_References.Look(ref bed, "bed");
-        Scribe_References.Look(ref lord, "lord");
         boughtItems ??= [];
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -92,6 +110,9 @@ public class CompGuest : ThingComp
 
             // Can't save lord (IExposable), so we just gotta find it each time
             //lord = Pawn.GetLord();
+
+            // Save/load defensive rebind: only restore Hospitality-relevant lords.
+            RebindHospitalityLord();
 
             // Bed doesn't store owners
             if (bed != null && !bed.Owners().Contains(Pawn))
@@ -138,7 +159,7 @@ public class CompGuest : ThingComp
     public override void PostSpawnSetup(bool respawningAfterLoad)
     {
         base.PostSpawnSetup(respawningAfterLoad);
-        lord = Pawn.GetLord();
+        RebindHospitalityLord();
     }
 
     public void Arrive()

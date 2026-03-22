@@ -2,10 +2,14 @@ using HarmonyLib;
 using Hospitality.Utilities;
 using Multiplayer.API;
 using Verse;
+using Verse.AI.Group;
 
 namespace Hospitality;
 
 [StaticConstructorOnStartup]
+// MP compatibility entry point.
+// Prefer explicit sync wrappers for player-triggered state changes.
+// Keep gameplay behavior unchanged unless sync safety requires otherwise.
 internal static class Multiplayer
 {
     internal static readonly ISyncField[] guestFields;
@@ -64,6 +68,8 @@ internal static class Multiplayer
         // MP: sync guest area changes from the main Hospitality table using stable area IDs
         MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestAccommodationAreaById)));
         MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetGuestShoppingAreaById)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetLordAccommodationAreaById)));
+        MP.RegisterSyncMethod(AccessTools.Method(typeof(Multiplayer), nameof(SetLordShoppingAreaById)));
     }
 
     // MP sync wrapper: route guest-table entertain toggles through a synced method
@@ -95,6 +101,36 @@ internal static class Multiplayer
         var compGuest = pawn.CompGuest();
         if (compGuest != null)
             compGuest.ShoppingArea = GetAreaById(pawn.Map, areaId);
+    }
+
+    internal static void SetLordAccommodationAreaById(Pawn pawn, int areaId)
+    {
+        var lord = pawn?.GetLord();
+        if (lord == null)
+            return;
+
+        var area = GetAreaById(pawn.Map, areaId);
+        foreach (var lordPawn in lord.ownedPawns)
+        {
+            var compGuest = lordPawn.CompGuest();
+            if (compGuest != null)
+                compGuest.GuestArea = area;
+        }
+    }
+
+    internal static void SetLordShoppingAreaById(Pawn pawn, int areaId)
+    {
+        var lord = pawn?.GetLord();
+        if (lord == null)
+            return;
+
+        var area = GetAreaById(pawn.Map, areaId);
+        foreach (var lordPawn in lord.ownedPawns)
+        {
+            var compGuest = lordPawn.CompGuest();
+            if (compGuest != null)
+                compGuest.ShoppingArea = area;
+        }
     }
 
     // MP helper: resolve a synced area ID back to a map area; -1 means no restriction / null

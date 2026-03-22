@@ -42,7 +42,7 @@ public static class GuestUtility
 
     private static readonly SimpleCurve recruitChanceOpinionCurve = [new CurvePoint(0f, 5), new CurvePoint(0.5f, 20), new CurvePoint(1f, 30)];
 
-    private static readonly Dictionary<int, bool> relatedCache = new();
+    private static readonly Dictionary<(int pawnId, int guestId), bool> relatedCache = new();
     private static int relatedCacheNextClearTick;
 
     private static RoyalTitleDef[] titleDefs;
@@ -187,10 +187,11 @@ public static class GuestUtility
             relatedCacheNextClearTick = GenTicks.TicksGame + GenDate.TicksPerHour * 3;
         }
 
-        if (!relatedCache.TryGetValue(pawn.thingIDNumber, out var isRelated))
+        var cacheKey = (pawn.thingIDNumber, guest.thingIDNumber);
+        if (!relatedCache.TryGetValue(cacheKey, out var isRelated))
         {
             isRelated = guest.relations.RelatedPawns.Any(rel => rel == pawn);
-            relatedCache.Add(pawn.thingIDNumber, isRelated);
+            relatedCache.Add(cacheKey, isRelated);
         }
 
         return isRelated;
